@@ -1,0 +1,43 @@
+<div class="container page">
+  <div class="auth-layout">
+    <div>
+      <span class="eyebrow">Acesso</span>
+      <h1>Entrar no CampusOS</h1>
+      <p>Acompanhe quanto falta para se formar, o que está travado por pré-requisito e o que cursar no próximo período.</p>
+
+      <form [formGroup]="form" (ngSubmit)="submit()" style="max-width:420px">
+        <label class="field">
+          <span>E-mail institucional</span>
+          <input class="input" type="email" formControlName="email" placeholder="aluno@alunos.utfpr.edu.br" />
+        </label>
+
+        <label class="field">
+          <span>Senha</span>
+          <input class="input" type="password" formControlName="password" />
+        </label>
+
+        @if (error()) {
+          <p class="error">{{ error() }}</p>
+        }
+
+        <button type="submit" class="btn btn--primary" [disabled]="form.invalid || loading()">
+          {{ loading() ? 'Entrando…' : 'Entrar' }}
+        </button>
+
+        <div style="font-size:14px;color:var(--graphite)">
+          Primeiro acesso? <a routerLink="/signup">Criar conta</a>
+        </div>
+      </form>
+    </div>
+
+    <aside class="panel panel--accent panel--quiet">
+      <div class="eyebrow" style="margin-bottom:14px">Acesso restrito</div>
+      <p style="font-size:14px">Use o e-mail de aluno da UTFPR. Servidores e visitantes não têm cadastro no CampusOS.</p>
+      <div style="height:1px;background:var(--line);margin:16px 0"></div>
+      <div style="font-size:14px;line-height:1.9">
+        <a href="#" style="display:block">Recuperar senha</a>
+        <a href="#" style="display:block">Suporte da coordenação</a>
+      </div>
+    </aside>
+  </div>
+</div>

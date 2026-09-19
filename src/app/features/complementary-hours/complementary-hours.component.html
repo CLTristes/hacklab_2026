@@ -1,0 +1,133 @@
+<div class="container page">
+  <span class="eyebrow">Horas complementares</span>
+  <h1>Atividades complementares</h1>
+  <p>Declare suas atividades e acompanhe quanto conta dentro do teto de cada categoria. Sem fila de homologação: o contador atualiza na hora.</p>
+
+  @if (lastResult(); as result) {
+    <div class="panel" [class.panel--blocked]="result.capped" [class.panel--ok]="!result.capped" style="margin-bottom:24px">
+      @if (result.capped) {
+        <strong>Categoria estourou o teto.</strong> {{ result.hours_not_counted }}h não contaram para a sua carga horária.
+      } @else {
+        <strong>Atividade declarada dentro do teto.</strong>
+      }
+    </div>
+  }
+
+  <div style="margin-bottom:24px">
+    <button type="button" class="btn btn--primary" (click)="openDeclareModal()">+ Declarar atividade</button>
+  </div>
+
+  @if (loading()) {
+    <p>Carregando…</p>
+  }
+
+  @if (error()) {
+    <p class="error">{{ error() }}</p>
+  }
+
+  @if (!loading() && !error()) {
+    <div class="stats">
+      <div class="stats__item">
+        <div class="stats__label">Declarado</div>
+        <div class="stats__value">{{ totalDeclared() }}h</div>
+      </div>
+      <div class="stats__item">
+        <div class="stats__label">Contabilizado</div>
+        <div class="stats__value">{{ totalCounted() }}h</div>
+      </div>
+    </div>
+
+    @if (summary().length > 0) {
+      <h2>Resumo por categoria</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;margin-bottom:38px">
+        @for (s of summary(); track s.category.id) {
+          <div class="panel panel--quiet">
+            <div style="font-weight:600;margin-bottom:8px">{{ s.category.name }}</div>
+            <div class="mono" style="font-size:12.5px;color:var(--graphite);display:flex;flex-direction:column;gap:3px">
+              <span>Declarado: {{ s.declared_hours }}h</span>
+              <span>Contado: {{ s.counted_hours }}h</span>
+              @if (s.hours_not_counted > 0) {
+                <span style="color:var(--blocked)">Perdido: {{ s.hours_not_counted }}h</span>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    <h2>Atividades declaradas</h2>
+    @if (activities().length === 0) {
+      <p>Nenhuma atividade declarada ainda.</p>
+    }
+
+    <div style="display:flex;flex-direction:column;gap:1px;background:var(--line);border:1px solid var(--line)">
+      @for (a of activities(); track a.id) {
+        <div class="panel" style="border:0">
+          <div style="display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap">
+            <div>
+              <div style="font-weight:600">{{ a.title }}</div>
+              @if (a.category) {
+                <div class="mono" style="font-size:12px;color:var(--graphite);margin-top:4px">{{ a.category.name }}</div>
+              }
+            </div>
+            <div class="mono" style="font-size:13px;text-align:right">
+              <div>{{ a.hours_claimed }}h declaradas</div>
+              @if (a.hours_counted !== undefined) {
+                <div style="color:var(--graphite)">{{ a.hours_counted }}h contadas</div>
+              }
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  @if (showDeclareModal()) {
+    <app-modal eyebrow="Horas complementares" title="Declarar atividade" size="md" (closed)="closeDeclareModal()">
+      @if (declareError()) {
+        <p class="error" style="margin-bottom:14px">{{ declareError() }}</p>
+      }
+
+      <form id="activity-form" (ngSubmit)="submitActivity()">
+        <label class="field">
+          <span>Título</span>
+          <input class="input" type="text" name="title" [(ngModel)]="form.title" placeholder="Ex.: Semana Acadêmica" />
+        </label>
+
+        <label class="field">
+          <span>Categoria</span>
+          <select class="input" name="category_id" [(ngModel)]="form.category_id">
+            <option value="" disabled>{{ categories().length > 0 ? 'Selecione…' : 'Nenhuma categoria disponível' }}</option>
+            @for (c of categories(); track c.id) {
+              <option [value]="c.id">{{ c.name }}</option>
+            }
+          </select>
+        </label>
+
+        <div class="form-grid-2">
+          <label class="field">
+            <span>Horas</span>
+            <input class="input" type="number" min="1" name="hours_claimed" [(ngModel)]="form.hours_claimed" />
+          </label>
+
+          <label class="field">
+            <span>Data do certificado</span>
+            <input class="input" type="date" name="issued_at" [(ngModel)]="form.issued_at" />
+          </label>
+        </div>
+
+        <label class="field">
+          <span>Certificado (PDF, PNG ou JPG, opcional)</span>
+          <input class="input" type="file" name="certificate" accept=".pdf,.png,.jpg,.jpeg" (change)="onFileChange($event)" />
+        </label>
+      </form>
+
+      <div modal-footer>
+        <button type="button" class="btn btn--secondary" (click)="closeDeclareModal()">Cancelar</button>
+        <button type="submit" form="activity-form" class="btn btn--primary" [disabled]="saving()">
+          {{ saving() ? 'Salvando…' : 'Salvar' }}
+        </button>
+      </div>
+    </app-modal>
+  }
+</div>

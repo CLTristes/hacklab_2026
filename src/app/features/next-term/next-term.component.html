@@ -1,0 +1,143 @@
+<div class="container page">
+  <span class="eyebrow">Matrícula, elegibilidade e simulação</span>
+  <h1>Grade do Período</h1>
+
+  @if (loading()) {
+    <p>Carregando…</p>
+  }
+
+  @if (error()) {
+    <p class="error">{{ error() }}</p>
+  }
+
+  @if (nextTerm(); as nt) {
+    <p class="status status--pending" style="margin-bottom:24px">Período {{ nt.current_period }}</p>
+
+    <section class="panel" style="margin-bottom:26px">
+      <h2>Matriculado agora</h2>
+      <p class="mono" style="font-size:12px;color:var(--graphite);margin-bottom:18px">{{ enrolled().length }} disciplinas neste período</p>
+      <div class="ficha__list">
+        @for (s of enrolled(); track s.enrollment_id) {
+          <div class="ficha__pending-item">
+            <button type="button" class="ficha__pending-toggle" (click)="toggleEnrolled(s.subject.code)">
+              <span style="display:flex;align-items:center;gap:12px">
+                <span class="chip">{{ s.subject.code }}</span>
+                <span style="font-size:14.5px;font-weight:400">{{ s.subject.name }}</span>
+              </span>
+              <span class="mono">{{ expandedEnrolled().has(s.subject.code) ? '−' : '+' }}</span>
+            </button>
+
+            @if (expandedEnrolled().has(s.subject.code)) {
+              <dl class="ficha__kv" style="padding:12px 14px 14px">
+                <div class="ficha__kv-row">
+                  <dt>Horário</dt>
+                  <dd>{{ s.offering.schedule ?? '—' }}</dd>
+                </div>
+                <div class="ficha__kv-row">
+                  <dt>Turma</dt>
+                  <dd>{{ s.offering.class_code }}</dd>
+                </div>
+                <div class="ficha__kv-row">
+                  <dt>Professor</dt>
+                  <dd>{{ s.offering.professor_name }}</dd>
+                </div>
+              </dl>
+            }
+          </div>
+        }
+      </div>
+    </section>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:26px;align-items:start;margin-bottom:30px">
+      <section class="panel panel--ok">
+        <h2>Próximas disciplinas</h2>
+        <p class="mono" style="font-size:12px;color:var(--graphite);margin-bottom:18px">{{ mandatoryEligible().length }} disciplinas obrigatórias</p>
+        <div style="display:flex;flex-direction:column;gap:18px">
+          @for (group of visiblePeriods(); track group.period) {
+            <div>
+              <div class="eyebrow" style="margin-bottom:8px">Período {{ group.period }}</div>
+              <div style="display:flex;flex-direction:column;gap:10px">
+                @for (s of group.subjects; track s.code) {
+                  <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--line)">
+                    <span class="chip">{{ s.code }}</span>
+                    <span style="flex:1;font-size:14.5px">{{ s.name }}</span>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+        @if (mandatoryEligibleByPeriod().length > 1) {
+          <button type="button" class="btn" style="margin-top:12px" (click)="toggleShowAllPeriods()">
+            {{ showAllPeriods() ? 'Ver menos' : 'Ver mais períodos' }}
+          </button>
+        }
+      </section>
+
+      <section class="panel panel--blocked">
+        <h2>Travadas</h2>
+        <p class="mono" style="font-size:12px;color:var(--graphite);margin-bottom:18px">{{ nt.blocked.length }} disciplinas · pré-requisito pendente</p>
+        <div style="display:flex;flex-direction:column;gap:18px">
+          @for (s of nt.blocked; track s.code) {
+            <div>
+              <div style="display:flex;align-items:center;gap:10px">
+                <span class="chip">{{ s.code }}</span>
+                <span style="font-size:14.5px">{{ s.name }}</span>
+              </div>
+              @for (b of s.blocked_by; track b.subject.code) {
+                <div class="prereq">
+                  <div class="prereq__elbow"></div>
+                  <div style="display:flex;align-items:center;gap:9px;padding-top:9px">
+                    <span class="chip chip--req">{{ b.subject.code }}</span>
+                    <span style="font-size:13.5px;color:var(--ink-2)">{{ b.reason }}</span>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </section>
+    </div>
+
+    <button type="button" class="btn btn--primary" (click)="openSimulateModal()">E se eu reprovar? — simular</button>
+
+    @if (showSimulateModal()) {
+      <app-modal eyebrow="Simulação" title="E se eu reprovar?" size="lg" (closed)="closeSimulateModal()">
+        <p>Marque disciplinas já cursadas para simular reprovação (sem gravar nada).</p>
+        <div style="display:flex;flex-wrap:wrap;gap:8px 20px;margin:12px 0 20px;font-family:var(--font-mono);font-size:13px">
+          @for (s of nt.eligible; track s.code) {
+            <label style="display:flex;align-items:center;gap:8px">
+              <input type="checkbox" [checked]="selectedCodes().has(s.code)" (change)="toggle(s.code, $any($event.target).checked)" />
+              {{ s.code }}
+            </label>
+          }
+        </div>
+
+        @if (simulation(); as sim) {
+          <div class="blueprint-box" style="margin-top:24px">
+            <div class="eyebrow">Resultado</div>
+            <p style="color:var(--blueprint-ink)">
+              Atraso estimado na formatura: <strong class="mono">{{ sim.estimated_graduation_delay_terms }}</strong> termo(s).
+            </p>
+            <ul class="mono" style="list-style:none;padding:0;margin:0;font-size:13px">
+              @for (a of sim.affected_subjects; track a.subject.code) {
+                <li style="padding:8px 0;border-top:1px dashed var(--blueprint-line)">
+                  <span class="chip chip--req" style="margin-right:8px">{{ a.subject.code }}</span>{{ a.subject.name }}:
+                  período {{ a.real_earliest_period }} → {{ a.simulated_earliest_period }}
+                  (+{{ a.delay_terms }})
+                </li>
+              }
+            </ul>
+          </div>
+        }
+
+        <div modal-footer>
+          <button type="button" class="btn" (click)="closeSimulateModal()">Fechar</button>
+          <button type="button" class="btn btn--primary" (click)="simulate()" [disabled]="simulating()">
+            {{ simulating() ? 'Simulando…' : 'Simular' }}
+          </button>
+        </div>
+      </app-modal>
+    }
+  }
+</div>

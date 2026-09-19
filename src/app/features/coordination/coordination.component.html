@@ -1,0 +1,79 @@
+<div class="container page">
+  <span class="eyebrow">Painel da coordenação</span>
+  <h1>Visão agregada</h1>
+  <p>Dados anônimos de vínculos ativos — sem aluno nomeado. Escopo (curso ou instituição) resolvido automaticamente pelo seu perfil.</p>
+
+  @if (loading()) {
+    <p>Carregando…</p>
+  }
+
+  @if (error()) {
+    <p class="error">{{ error() }}</p>
+  }
+
+  @if (!loading() && !error()) {
+    <div class="stats" style="margin-bottom:38px">
+      <div class="stats__item">
+        <div class="stats__label">Perto do prazo (dentro de {{ atRiskWithinTerms() }} termos)</div>
+        <div class="stats__value">{{ atRiskCount() }}</div>
+      </div>
+    </div>
+
+    <h2>Onde a turma empaca</h2>
+    @if (bottlenecks().length === 0) {
+      <p>Sem gargalos com volume suficiente pra exibir.</p>
+    }
+    <div style="display:flex;flex-direction:column;gap:1px;background:var(--line);border:1px solid var(--line);margin-bottom:38px">
+      @for (b of bottlenecks(); track b.subject_code) {
+        <div class="panel" style="border:0">
+          <div style="display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap">
+            <div>
+              <div style="font-weight:600">{{ b.subject_name }}</div>
+              <div class="mono" style="font-size:12px;color:var(--graphite);margin-top:4px">{{ b.subject_code }}</div>
+            </div>
+            <div class="mono" style="font-size:13px;text-align:right">
+              <div>{{ b.failure_rate * 100 | number: '1.0-1' }}% reprovação</div>
+              <div style="color:var(--graphite)">{{ b.total_attempts }} tentativas · {{ b.failed_grade }} nota · {{ b.failed_absence }} falta</div>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+
+    <h2>Quanto custa (atraso por coorte)</h2>
+    @if (cohorts().length === 0) {
+      <p>Sem coortes com volume suficiente pra exibir.</p>
+    }
+    <div style="display:flex;flex-direction:column;gap:1px;background:var(--line);border:1px solid var(--line);margin-bottom:38px">
+      @for (c of cohorts(); track c.entry_term) {
+        <div class="panel" style="border:0">
+          <div style="display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap">
+            <div style="font-weight:600">{{ c.entry_term }}</div>
+            <div class="mono" style="font-size:13px;text-align:right">
+              <div>{{ c.avg_delay_terms }} termos de atraso médio</div>
+              <div style="color:var(--graphite)">{{ c.active_registrations }} vínculos ativos</div>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+
+    <h2>O que está represado</h2>
+    @if (demand().length === 0) {
+      <p>Sem demanda represada com volume suficiente pra exibir.</p>
+    }
+    <div style="display:flex;flex-direction:column;gap:1px;background:var(--line);border:1px solid var(--line)">
+      @for (d of demand(); track d.subject_code) {
+        <div class="panel" style="border:0">
+          <div style="display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap">
+            <div>
+              <div style="font-weight:600">{{ d.subject_name }}</div>
+              <div class="mono" style="font-size:12px;color:var(--graphite);margin-top:4px">{{ d.subject_code }}</div>
+            </div>
+            <div class="mono" style="font-size:13px">{{ d.demand }} elegíveis</div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

@@ -1,0 +1,171 @@
+<div class="container page">
+  <span class="eyebrow">Início</span>
+  <h1>Painel do aluno</h1>
+  <p>Sua progressão e os prazos das disciplinas do período corrente, tudo em um lugar.</p>
+
+  @if (progressLoading()) {
+    <p>Carregando progressão…</p>
+  }
+
+  @if (progressError()) {
+    <p class="error">{{ progressError() }}</p>
+  }
+
+  @if (progress(); as p) {
+    @if (p['overall']; as overall) {
+      <div class="stats">
+        <div class="stats__item">
+          <div class="stats__label">Cumpridas</div>
+          <div class="stats__value">{{ overall.completed_hours }}h</div>
+        </div>
+        <div class="stats__item">
+          <div class="stats__label">Exigidas</div>
+          <div class="stats__value">{{ overall.required_hours }}h</div>
+        </div>
+        <div class="stats__item">
+          <div class="stats__label">Concluído</div>
+          <div class="stats__value">{{ pct(overall) }}%</div>
+        </div>
+      </div>
+
+      <section class="panel panel--accent" style="margin-bottom:38px">
+        <h2>Carga horária cumprida</h2>
+        <div class="progress" [style.--pct.%]="pct(overall)">
+          <div class="progress__fill"></div>
+        </div>
+        <div class="progress__scale">
+          <span>0%</span><span>50%</span><span>100%</span>
+        </div>
+        <a routerLink="/progress" style="display:inline-block;margin-top:14px;font-size:13.5px">Ver progressão completa →</a>
+      </section>
+    }
+  }
+
+  @if (loading()) {
+    <p>Carregando agenda…</p>
+  }
+
+  @if (error()) {
+    <p class="error">{{ error() }}</p>
+  }
+
+  @if (!loading() && !error()) {
+    <div class="home-grid">
+      <section class="panel">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <h2 style="margin:0;font-size:15px">{{ monthLabel() }}</h2>
+          <div style="display:flex;gap:6px">
+            <button type="button" class="btn btn--secondary" style="padding:5px 10px;font-size:12.5px" (click)="prevMonth()">‹</button>
+            <button type="button" class="btn btn--secondary" style="padding:5px 10px;font-size:12.5px" (click)="goToday()">Hoje</button>
+            <button type="button" class="btn btn--secondary" style="padding:5px 10px;font-size:12.5px" (click)="nextMonth()">›</button>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <span class="mono" style="font-size:11.5px;color:var(--graphite)">
+            Selecionado: {{ selectedDate() | date: 'dd/MM/yyyy' }}
+          </span>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(7,1fr);border:1px solid var(--line);border-bottom:0">
+          @for (w of weekdayLabels; track w) {
+            <div class="mono" style="padding:4px;font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--graphite);background:var(--surface);border-bottom:1px solid var(--line);border-right:1px solid var(--line);text-align:center">
+              {{ w }}
+            </div>
+          }
+        </div>
+
+        @for (week of weeks(); track $index) {
+          <div style="display:grid;grid-template-columns:repeat(7,1fr);border-left:1px solid var(--line)">
+            @for (day of week; track day.date.getTime()) {
+              <button
+                type="button"
+                (click)="selectDay(day)"
+                (dblclick)="selectDay(day); openTaskModal()"
+                style="all:unset;cursor:pointer;display:block;box-sizing:border-box;min-height:48px;padding:3px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);background:{{ day.date.getTime() === selectedDate().getTime() ? 'var(--blueprint)' : (day.isToday ? 'var(--yellow-tint)' : (day.inMonth ? 'var(--paper)' : 'var(--surface)')) }}"
+              >
+                <div class="mono" style="font-size:10.5px;color:{{ day.date.getTime() === selectedDate().getTime() ? 'var(--paper)' : (day.inMonth ? 'var(--ink)' : 'var(--muted)') }};margin-bottom:2px">
+                  {{ day.date.getDate() }}
+                </div>
+                @if (day.items.length > 0) {
+                  <div style="width:6px;height:6px;border-radius:50%;background:var(--blueprint)"></div>
+                }
+              </button>
+            }
+          </div>
+        }
+      </section>
+
+      <aside class="panel panel--accent">
+        <div class="eyebrow" style="margin-bottom:14px">Próximos prazos</div>
+        @if (upcoming().length === 0) {
+          <p style="font-size:14px">Nenhum prazo pendente por aqui.</p>
+        }
+        <div style="display:flex;flex-direction:column;gap:12px">
+          @for (item of upcoming(); track item.id) {
+            <div style="border-bottom:1px solid var(--line-soft);padding-bottom:10px">
+              <div style="font-size:13.5px;font-weight:500">{{ item.title }}</div>
+              <div class="mono" style="font-size:11px;color:var(--graphite);margin-top:3px">
+                {{ item.due_at | date: 'dd/MM · HH:mm' }}
+              </div>
+            </div>
+          }
+        </div>
+        <a routerLink="/next-term" style="display:inline-block;margin-top:6px;font-size:13.5px">Ver grade do período →</a>
+        <a routerLink="/veteran-archive" style="display:inline-block;margin-top:6px;font-size:13.5px">Acervo de notas →</a>
+        @if (canSeeCoordination()) {
+          <a routerLink="/coordination" style="display:inline-block;margin-top:6px;font-size:13.5px">Painel da coordenação →</a>
+        }
+      </aside>
+    </div>
+  }
+
+  @if (showTaskModal()) {
+    <app-modal
+      eyebrow="Data: {{ selectedDate() | date: 'dd/MM/yyyy' }}"
+      title="Cadastrar Tarefa"
+      size="md"
+      (closed)="closeTaskModal()"
+    >
+      @if (taskError()) {
+        <p class="error" style="margin-bottom:14px">{{ taskError() }}</p>
+      }
+
+      <form id="task-form" (ngSubmit)="submitTask()">
+        <label class="field">
+          <span>Título</span>
+          <input class="input" type="text" name="title" [(ngModel)]="taskForm.title" placeholder="Ex.: Entrega do relatório" />
+        </label>
+
+        <div class="form-grid-time">
+          <label class="field">
+            <span>Tipo</span>
+            <select class="input" name="kind" [(ngModel)]="taskForm.kind">
+              @for (k of taskKinds; track k.value) {
+                <option [value]="k.value">{{ k.label }}</option>
+              }
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Horário</span>
+            <input class="input" type="time" name="time" [(ngModel)]="taskForm.time" />
+          </label>
+        </div>
+
+        <label class="field">
+          <span>Descrição (opcional)</span>
+          <textarea class="input" name="description" [(ngModel)]="taskForm.description_md" rows="3"></textarea>
+        </label>
+
+      </form>
+
+      <div modal-footer>
+        <button type="button" class="btn btn--secondary" (click)="closeTaskModal()">Cancelar</button>
+        <button type="submit" form="task-form" class="btn btn--primary" [disabled]="savingTask()">
+          {{ savingTask() ? 'Salvando…' : 'Salvar' }}
+        </button>
+      </div>
+    </app-modal>
+  }
+</div>

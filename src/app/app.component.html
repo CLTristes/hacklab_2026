@@ -1,0 +1,54 @@
+<div class="gov-strip">
+  <div class="container">
+    <span>Universidade Tecnológica Federal do Paraná</span>
+    <div class="gov-strip__links">
+      <a href="https://sistemas2.utfpr.edu.br/portal-aluno" target="_blank" rel="noopener">Portal do Aluno</a>
+      <a href="https://moodle.utfpr.edu.br" target="_blank" rel="noopener">Moodle</a>
+      <a href="https://classroom.google.com" target="_blank" rel="noopener">Classroom</a>
+    </div>
+  </div>
+</div>
+
+<header class="topbar">
+  <div class="container">
+    <a [routerLink]="auth.isAuthenticated() ? '/home' : '/login'" class="brand">
+      <span class="brand__mark">C</span>
+      <span>Campus<span class="brand__os">OS</span></span>
+    </a>
+
+    @if (auth.isAuthenticated()) {
+      <button type="button" class="nav__toggle" [class.is-active]="navOpen()" (click)="toggleNav()" aria-label="Abrir menu">
+        <span></span><span></span><span></span>
+      </button>
+
+      <nav class="nav" [class.is-open]="navOpen()">
+        <a routerLink="/home" routerLinkActive="active">Início</a>
+        <a routerLink="/progress" routerLinkActive="active">Progressão</a>
+        <a routerLink="/next-term" routerLinkActive="active">Grade do Período</a>
+        <a routerLink="/veteran-archive" routerLinkActive="active">Acervo</a>
+        <a routerLink="/complementary-hours" routerLinkActive="active">Horas complementares</a>
+        <a routerLink="/documents" routerLinkActive="active">Documentos</a>
+        <div class="nav__user">
+          <span class="nav__user-trigger">{{ auth.user()?.name }}</span>
+          <button type="button" class="nav__logout" (click)="logout()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+            Sair
+          </button>
+        </div>
+      </nav>
+    }
+  </div>
+</header>
+
+<router-outlet />
+
+<footer class="footer">
+  <div class="container">
+    <span>CampusOS · ferramenta não oficial de acompanhamento acadêmico</span>
+    <span class="mono">v0.4 · 2026</span>
+  </div>
+</footer>

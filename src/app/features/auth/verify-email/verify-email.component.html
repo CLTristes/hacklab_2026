@@ -1,0 +1,52 @@
+<div class="container page">
+  <div class="auth-layout">
+    <div>
+      <span class="eyebrow">Segurança</span>
+      <h1>Confirme seu e-mail</h1>
+      <p>Falta um passo para liberar o envio do histórico.</p>
+
+      <div class="panel" style="max-width:520px">
+        <div class="status status--pending" style="margin-bottom:14px">Aguardando confirmação</div>
+        <p style="font-size:15px">
+          Enviamos um código de 6 dígitos (válido por 15 min). Isso não bloqueia seu acesso — é só uma camada de segurança.
+        </p>
+
+        <form [formGroup]="form" (ngSubmit)="submit()">
+          <label class="field">
+            <span>Código</span>
+            <input class="input" type="text" formControlName="code" maxlength="6" placeholder="482913" />
+          </label>
+
+          @if (error()) {
+            <p class="error">{{ error() }}</p>
+          }
+
+          <div style="display:flex;flex-wrap:wrap;gap:10px">
+            <button type="submit" class="btn btn--primary" [disabled]="form.invalid || loading()">
+              {{ loading() ? 'Confirmando…' : 'Confirmar' }}
+            </button>
+            <button type="button" class="btn btn--secondary" (click)="resend()" [disabled]="resending()">
+              {{ resending() ? 'Reenviando…' : 'Reenviar código' }}
+            </button>
+          </div>
+        </form>
+
+        @if (resent()) {
+          <p style="margin-top:14px">Código reenviado.</p>
+        }
+
+        <p style="margin-top:14px"><a (click)="skip()">Pular por agora</a></p>
+      </div>
+    </div>
+
+    <aside class="panel panel--accent panel--quiet">
+      <div class="eyebrow" style="margin-bottom:14px">Acesso restrito</div>
+      <p style="font-size:14px">Use o e-mail de aluno da UTFPR. Servidores e visitantes não têm cadastro no CampusOS.</p>
+      <div style="height:1px;background:var(--line);margin:16px 0"></div>
+      <div style="font-size:14px;line-height:1.9">
+        <a href="#" style="display:block">Recuperar senha</a>
+        <a href="#" style="display:block">Suporte da coordenação</a>
+      </div>
+    </aside>
+  </div>
+</div>

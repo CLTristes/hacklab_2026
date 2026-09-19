@@ -1,0 +1,137 @@
+<div class="container page">
+  <span class="eyebrow">Jornada acadêmica</span>
+  <h1>Minha progressão</h1>
+
+  @if (loading()) {
+    <p>Carregando…</p>
+  }
+
+  @if (error()) {
+    <p class="error">{{ error() }}</p>
+    <p>Envie seu histórico escolar para vincular sua matrícula.</p>
+    <button type="button" class="btn btn--primary" routerLink="/documents">Enviar histórico</button>
+  }
+
+  @if (progress(); as p) {
+    @if (p['overall']; as overall) {
+      <div class="stats">
+        <div class="stats__item">
+          <div class="stats__label">Cumpridas</div>
+          <div class="stats__value">{{ overall.completed_hours }}h</div>
+        </div>
+        <div class="stats__item">
+          <div class="stats__label">Exigidas</div>
+          <div class="stats__value">{{ overall.required_hours }}h</div>
+        </div>
+        <div class="stats__item">
+          <div class="stats__label">Concluído</div>
+          <div class="stats__value">{{ pct(overall) }}%</div>
+        </div>
+      </div>
+
+      <section class="panel panel--accent" style="margin-bottom:38px">
+        <h2>Carga horária cumprida</h2>
+        <div class="progress" [style.--pct.%]="pct(overall)">
+          <div class="progress__fill"></div>
+        </div>
+        <div class="progress__scale">
+          <span>0%</span><span>50%</span><span>100%</span>
+        </div>
+      </section>
+    }
+
+    <div class="ficha">
+      <div class="ficha__head">
+        <div>
+          <span class="eyebrow" style="margin:0">Documento gerado automaticamente</span>
+          <h2 style="margin:2px 0 0">Ficha completa</h2>
+        </div>
+        <span class="mono ficha__stamp">CampusOS</span>
+      </div>
+
+      @if (fichaSections().length === 0) {
+        <p style="font-size:13.5px;color:var(--graphite)">Nenhum dado adicional retornado para esta matrícula.</p>
+      }
+
+      <div class="ficha__grid">
+        @for (section of fichaSections(); track section.key) {
+          <section class="ficha__card">
+            <h3 class="ficha__card-title">{{ section.label }}</h3>
+
+            @switch (section.kind) {
+              @case ('primitive') {
+                <span class="chip chip--req">{{ translateValue(section.value) }}</span>
+              }
+
+              @case ('object') {
+                <dl class="ficha__kv">
+                  @for (entry of visibleEntries(section.value); track entry[0]) {
+                    <div class="ficha__kv-row">
+                      <dt>{{ formatLabel(entry[0]) }}</dt>
+                      <dd>
+                        @if (isPlainValue(entry[1])) {
+                          {{ translateValue(entry[1]) }}
+                        } @else {
+                          <span class="mono" style="font-size:12px;color:var(--graphite)">{{ entry[1] | json }}</span>
+                        }
+                      </dd>
+                    </div>
+                  }
+                </dl>
+              }
+
+              @case ('array') {
+                @if (isObjectArray(section.value)) {
+                  <div class="ficha__list">
+                    @for (item of visibleListItems(section.key, section.value); track $index) {
+                      <div class="ficha__pending-item">
+                        <button
+                          type="button"
+                          class="ficha__pending-toggle"
+                          (click)="toggleItem(section.key, $index)"
+                        >
+                          <span>{{ itemLabel(item) || ('Item ' + ($index + 1)) }}</span>
+                          <span style="display:flex;align-items:center;gap:12px">
+                            @if (statusClass(item)) {
+                              <span class="status" [class]="statusClass(item)">{{ itemStatus(item) }}</span>
+                            }
+                            <span class="mono">{{ isItemExpanded(section.key, $index) ? '−' : '+' }}</span>
+                          </span>
+                        </button>
+
+                        @if (isItemExpanded(section.key, $index)) {
+                          <dl class="ficha__kv" style="padding:12px 14px 14px">
+                            @for (entry of visibleEntries(item, ['name', 'title', 'label', 'status']); track entry[0]) {
+                              @if (isPlainValue(entry[1])) {
+                                <div class="ficha__kv-row">
+                                  <dt>{{ formatLabel(entry[0]) }}</dt>
+                                  <dd>{{ translateValue(entry[1]) }}</dd>
+                                </div>
+                              }
+                            }
+                          </dl>
+                        }
+                      </div>
+                    }
+                  </div>
+
+                  @if (asArray(section.value).length > 4) {
+                    <button type="button" class="btn--link" style="margin-top:12px;font-size:13px" (click)="toggleShowAll(section.key)">
+                      {{ isShowAll(section.key) ? 'Ver menos' : 'Ver todas (' + asArray(section.value).length + ')' }}
+                    </button>
+                  }
+                } @else {
+                  <div class="ficha__list">
+                    @for (item of asArray(section.value); track $index) {
+                      <span class="chip">{{ translateValue(item) }}</span>
+                    }
+                  </div>
+                }
+              }
+            }
+          </section>
+        }
+      </div>
+    </div>
+  }
+</div>

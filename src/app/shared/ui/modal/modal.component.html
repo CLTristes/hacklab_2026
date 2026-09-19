@@ -1,0 +1,21 @@
+<div class="modal-backdrop">
+  <div class="modal-panel modal-panel--{{ size }}" role="dialog" aria-modal="true">
+    <div class="modal-panel__header">
+      <div>
+        @if (eyebrow) {
+          <span class="eyebrow" style="margin-bottom:4px">{{ eyebrow }}</span>
+        }
+        <h2 class="modal-panel__title">{{ title }}</h2>
+      </div>
+      <button type="button" class="modal-panel__close" (click)="close()" aria-label="Fechar">×</button>
+    </div>
+
+    <div class="modal-panel__body">
+      <ng-content></ng-content>
+    </div>
+
+    <div class="modal-panel__footer">
+      <ng-content select="[modal-footer]"></ng-content>
+    </div>
+  </div>
+</div>
