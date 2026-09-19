@@ -1,7 +1,7 @@
 <div class="container page">
   <span class="eyebrow">Início</span>
   <h1>Painel do aluno</h1>
-  <p>Sua progressão e os prazos das disciplinas do período corrente, tudo em um lugar.</p>
+  <p style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Sua progressão e os prazos das disciplinas do período corrente, tudo em um lugar.</p>
 
   @if (progressLoading()) {
     <p>Carregando progressão…</p>
@@ -13,21 +13,6 @@
 
   @if (progress(); as p) {
     @if (p['overall']; as overall) {
-      <div class="stats">
-        <div class="stats__item">
-          <div class="stats__label">Cumpridas</div>
-          <div class="stats__value">{{ overall.completed_hours }}h</div>
-        </div>
-        <div class="stats__item">
-          <div class="stats__label">Exigidas</div>
-          <div class="stats__value">{{ overall.required_hours }}h</div>
-        </div>
-        <div class="stats__item">
-          <div class="stats__label">Concluído</div>
-          <div class="stats__value">{{ pct(overall) }}%</div>
-        </div>
-      </div>
-
       <section class="panel panel--accent" style="margin-bottom:38px">
         <h2>Carga horária cumprida</h2>
         <div class="progress" [style.--pct.%]="pct(overall)">
@@ -118,6 +103,125 @@
         }
       </aside>
     </div>
+  }
+
+  <section class="panel" style="margin-top:38px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <h2 style="margin:0;font-size:15px">Minhas notas</h2>
+      <button type="button" class="btn btn--primary" style="padding:5px 10px;font-size:12.5px" (click)="openNoteModal()">+ Nova nota</button>
+    </div>
+
+    @if (myNotesLoading()) {
+      <p>Carregando suas notas…</p>
+    }
+
+    @if (myNotesError()) {
+      <p class="error">{{ myNotesError() }}</p>
+    }
+
+    @if (!myNotesLoading() && !myNotesError()) {
+      @if (myNotes().length === 0) {
+        <p style="font-size:14px">Você ainda não criou nenhuma nota.</p>
+      }
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px">
+        @for (note of myNotes(); track note.id) {
+          <div class="panel panel--accent" style="cursor:pointer" (click)="openViewNoteModal(note)">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px">
+              <h3 style="margin:0;font-size:14.5px">{{ note.title }}</h3>
+              <span class="chip">{{ noteKindLabels[note.kind] }}</span>
+            </div>
+            <span class="status" [class.status--ok]="note.visibility !== 'private'" [class.status--pending]="note.visibility === 'private'">
+              {{ note.visibility === 'private' ? 'Só eu' : note.visibility }}
+            </span>
+          </div>
+        }
+      </div>
+    }
+  </section>
+
+  @if (viewNoteOpen()) {
+    <app-modal eyebrow="Minhas notas" title="Nota" size="md" (closed)="closeViewNoteModal()">
+      @if (viewNoteLoading()) {
+        <p>Carregando…</p>
+      }
+      @if (viewNoteError()) {
+        <p class="error">{{ viewNoteError() }}</p>
+      }
+      @if (viewingNote(); as note) {
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+          <h3 style="margin:0">{{ note.title }}</h3>
+          <button
+            type="button"
+            style="border:0;background:none;padding:0;cursor:pointer;display:inline-flex;align-items:center;gap:4px"
+            [disabled]="noteVoting()"
+            (click)="toggleNoteVote()"
+            [attr.aria-label]="noteVoted() ? 'Descurtir' : 'Curtir'"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" [attr.fill]="noteVoted() ? '#f5c518' : 'none'" stroke="#f5c518" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z"></path>
+            </svg>
+            <span class="mono" style="font-size:12px;color:var(--graphite)">{{ note.upvotes_count }}</span>
+          </button>
+        </div>
+
+        <div class="mono" style="font-size:12px;color:var(--graphite);margin-bottom:14px">
+          {{ noteKindLabels[note.kind] }}
+          @if (note.term) {
+            · {{ note.term.year }}/{{ note.term.period }}
+          }
+        </div>
+
+        <pre style="white-space:pre-wrap;font-family:inherit">{{ note.body_md }}</pre>
+      }
+    </app-modal>
+  }
+
+  @if (showNoteModal()) {
+    <app-modal eyebrow="Minhas notas" title="Nova nota" size="lg" (closed)="closeNoteModal()">
+      @if (noteError()) {
+        <p class="error" style="margin-bottom:14px">{{ noteError() }}</p>
+      }
+
+      <form id="note-form" (ngSubmit)="submitNote()">
+        <label class="field">
+          <span>Título</span>
+          <input class="input" type="text" name="title" [(ngModel)]="noteForm.title" placeholder="Ex.: Resumo da P2" />
+        </label>
+
+        <div class="form-grid-2">
+          <label class="field">
+            <span>Tipo</span>
+            <select class="input" name="kind" [(ngModel)]="noteForm.kind">
+              @for (k of noteKinds; track k.value) {
+                <option [value]="k.value">{{ k.label }}</option>
+              }
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Visualização</span>
+            <select class="input" name="visibility" [(ngModel)]="noteForm.visibility">
+              @for (v of noteVisibilities; track v.value) {
+                <option [value]="v.value">{{ v.label }}</option>
+              }
+            </select>
+          </label>
+        </div>
+
+        <label class="field">
+          <span>Conteúdo (markdown)</span>
+          <textarea class="input" name="body_md" [(ngModel)]="noteForm.body_md" rows="8"></textarea>
+        </label>
+      </form>
+
+      <div modal-footer>
+        <button type="button" class="btn btn--secondary" (click)="closeNoteModal()">Cancelar</button>
+        <button type="submit" form="note-form" class="btn btn--primary" [disabled]="savingNote()">
+          {{ savingNote() ? 'Salvando…' : 'Salvar' }}
+        </button>
+      </div>
+    </app-modal>
   }
 
   @if (showTaskModal()) {

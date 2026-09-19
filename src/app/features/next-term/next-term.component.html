@@ -104,14 +104,19 @@
     @if (showSimulateModal()) {
       <app-modal eyebrow="Simulação" title="E se eu reprovar?" size="lg" (closed)="closeSimulateModal()">
         <p>Marque disciplinas já cursadas para simular reprovação (sem gravar nada).</p>
-        <div style="display:flex;flex-wrap:wrap;gap:8px 20px;margin:12px 0 20px;font-family:var(--font-mono);font-size:13px">
-          @for (s of nt.eligible; track s.code) {
-            <label style="display:flex;align-items:center;gap:8px">
-              <input type="checkbox" [checked]="selectedCodes().has(s.code)" (change)="toggle(s.code, $any($event.target).checked)" />
-              {{ s.code }}
-            </label>
-          }
-        </div>
+        @for (group of mandatoryEligibleByPeriod(); track group.period) {
+          <div style="margin:12px 0 20px">
+            <div class="eyebrow" style="margin-bottom:8px">{{ group.period }}º período</div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px 20px;font-family:var(--font-mono);font-size:13px">
+              @for (s of group.subjects; track s.code) {
+                <label style="display:flex;align-items:center;gap:8px">
+                  <input type="checkbox" [checked]="selectedCodes().has(s.code)" (change)="toggle(s.code, $any($event.target).checked)" />
+                  {{ s.code }}
+                </label>
+              }
+            </div>
+          </div>
+        }
 
         @if (simulation(); as sim) {
           <div class="blueprint-box" style="margin-top:24px">
